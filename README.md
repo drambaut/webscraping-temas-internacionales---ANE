@@ -72,7 +72,7 @@ playwright install chromium
 ### Búsqueda básica (en los 10 sitios, con traducción automática)
 
 ```bash
-python src/main.py --query "radio spectrum allocation"
+python src/main.py --query "spectrum"
 ```
 
 ### Buscar solo en sitios específicos
