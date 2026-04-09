@@ -1,5 +1,5 @@
 [
-{
+  {
     "id": "itu",
     "name": "Unión Internacional de Telecomunicaciones (UIT/ITU)",
     "url": "https://www.itu.int/es/Pages/default.aspx#/es",
@@ -55,13 +55,13 @@
     "region": "Región 2",
     "search_url": "https://www.fcc.gov/search/#q={query}",
     "search_method": "url",
-    "search_box": "#edit-keys, input[name='keys'], input[type='search'], .form-search",
+    "search_box": "#edit-keys, input[name='keys']",
     "search_button": "#edit-submit, button[type='submit']",
-    "results_container": ".view-content, #search-results, .search-results",
-    "result_links": "a[href]",
+    "results_container": ".searchresult",
+    "result_links": ".searchresult a[href]",
     "result_link_filter": "fcc.gov",
-    "wait_for": ".view-content, .search-results, h3 a",
-    "notes": "FCC usa Drupal, buscador en /search/"
+    "wait_for": ".searchresult",
+    "notes": "Actualizado usando la clase .searchresult encontrada en el HTML."
   },
   {
     "id": "ofcom",
@@ -101,15 +101,15 @@
     "url": "https://www.gov.br/anatel/pt-br",
     "language": "pt",
     "region": "Región 2",
-    "search_url": "https://www.gov.br/anatel/pt-br/++pesquisa++?SearchableText={query}",
+    "search_url": "https://www.gov.br/anatel/pt-br/search?origem=form&SearchableText={query}",
     "search_method": "url",
-    "search_box": "input[name='SearchableText'], input[type='search'], #search-bar, .search-input",
-    "search_button": "button[type='submit'], .search-button",
-    "results_container": "#search-results, .listing, .results",
-    "result_links": "a[href]",
+    "search_box": "input[name='SearchableText']",
+    "search_button": "button[type='submit']",
+    "results_container": "ul.searchResults",
+    "result_links": "ul.searchResults a[href]",
     "result_link_filter": "gov.br/anatel",
-    "wait_for": "#search-results, .listing",
-    "notes": "Anatel usa Plone CMS - búsqueda vía ++pesquisa++"
+    "wait_for": "ul.searchResults",
+    "notes": "URL actualizada a /search y selectores ajustados a la lista ul.searchResults"
   },
   {
     "id": "subtel",
