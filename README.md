@@ -1,224 +1,274 @@
-# 🛰️ Telecom Web Searcher
+# 🔍 Web Searcher
 
-Herramienta Python para **buscar automáticamente** dentro de los sitios web de los principales reguladores de telecomunicaciones del mundo, sin usar APIs pagas ni Google. Usa **Playwright** (Chromium real) para simular un navegador humano.
-
----
-
-## 📋 Organismos cubiertos
-
-| ID      | Organismo                         | País/Región     | Idioma    |
-|---------|-----------------------------------|-----------------|-----------|
-| `itu`   | UIT / ITU                         | Internacional   | Inglés    |
-| `cept`  | CEPT                              | Europa          | Inglés    |
-| `ised`  | ISED Canada                       | Canadá          | Inglés    |
-| `fcc`   | FCC                               | EE.UU.          | Inglés    |
-| `ofcom` | Ofcom                             | Reino Unido     | Inglés    |
-| `crt`   | CRT                               | México          | Español   |
-| `anatel`| Anatel                            | Brasil          | Portugués |
-| `subtel`| Subtel                            | Chile           | Español   |
-| `acma`  | ACMA                              | Australia       | Inglés    |
-| `msit`  | MSIT                              | Corea del Sur   | Coreano   |
+**Búsqueda automatizada en reguladores internacionales de telecomunicaciones**  
+Desarrollado para la **Agencia Nacional del Espectro (ANE) · Colombia**
 
 ---
 
-## 📁 Estructura del proyecto
+## ¿Qué hace?
+
+Web Searcher es una herramienta web que busca automáticamente un tema en los sitios oficiales de los 10 principales organismos reguladores de telecomunicaciones del mundo, usando un navegador real (Chromium) para simular un usuario humano. Los resultados se pueden descargar en **Excel** o **CSV**.
+
+El progreso se muestra en tiempo real: una tarjeta por organismo que pasa de *esperando* → *buscando* → *completado*, junto con un log detallado de cada acción.
+
+---
+
+## Organismos cubiertos
+
+| ID | Organismo | País / Región | Idioma de búsqueda |
+|---|---|---|---|
+| `ITU` | Unión Internacional de Telecomunicaciones | Internacional | Español |
+| `CEPT` | Conferencia Europea de Adm. de Correos y Telecomunicaciones | Europa / Región 1 | Inglés |
+| `ISED` | Ministerio de Innovación, Ciencia y Desarrollo Económico | Canadá / Región 2 | Inglés |
+| `FCC` | Comisión Federal de Comunicaciones | EE.UU. / Región 2 | Inglés |
+| `OFCOM` | Oficina de Comunicaciones | Reino Unido / Región 1 | Inglés |
+| `CRT` | Comisión Reguladora de Telecomunicaciones | México / Región 2 | Español |
+| `ANATEL` | Agencia Nacional de Telecomunicaciones | Brasil / Región 2 | Portugués |
+| `SUBTEL` | Subsecretaría de Telecomunicaciones | Chile / Región 2 | Español |
+| `ACMA` | Autoridad de Comunicaciones y Medios Australiana | Australia / Región 3 | Inglés |
+| `MSIT` | Ministerio de Ciencia y TIC | Corea del Sur / Región 3 | Coreano |
+
+> La traducción automática convierte tu búsqueda al idioma de cada sitio usando Google Translate (sin API key).
+
+---
+
+## Arquitectura
 
 ```
-telecom_searcher/
+webscraping-temas-internacionales---ANE/
 │
-├── config/
-│   └── sites.json          ← Configuración de los 10 sitios (selectores CSS, URLs)
+├── main_api.py          ← Backend FastAPI (API REST + Server-Sent Events)
+│
+├── static/
+│   └── index.html       ← Frontend completo (HTML + CSS + JS, archivo único)
 │
 ├── src/
-│   ├── main.py             ← Punto de entrada (CLI)
-│   ├── translator.py       ← Traducción gratuita (deep_translator)
-│   ├── browser.py          ← Gestión de Playwright/Chromium
-│   ├── scraper.py          ← Lógica de búsqueda y extracción de links
-│   └── exporter.py         ← Exportación a Excel / CSV
+│   ├── browser.py       ← Gestión de Playwright / Chromium (anti-detección)
+│   ├── scraper.py       ← Lógica de búsqueda y extracción de links
+│   ├── translator.py    ← Traducción automática con deep_translator
+│   └── exporter.py      ← Exportación a Excel (.xlsx) y CSV
 │
-├── logs/                   ← Logs de ejecución (se generan automáticamente)
-├── output/                 ← Archivos de resultados (Excel/CSV)
+├── config/
+│   └── sites.json       ← Configuración de los 10 organismos (URLs, selectores CSS)
 │
 ├── requirements.txt
+├── render.yaml          ← Despliegue automático en Render
 └── README.md
 ```
 
+### Flujo de datos
+
+```
+Usuario escribe query
+        │
+        ▼
+POST /api/search  →  Traduce query (en/es/ko/pt)
+        │             Crea Job con ID único
+        │             Lanza hilo de scraping
+        ▼
+GET /api/progress/{job_id}  ←─── Server-Sent Events (SSE)
+        │                          El frontend recibe eventos en tiempo real:
+        │                          progreso, logs, conteo de links por sitio
+        ▼
+GET /api/download/{job_id}  →  Descarga Excel o CSV
+```
+
 ---
 
-## ⚙️ Instalación (una sola vez)
+## Instalación local
 
-### 1. Requisitos previos
+### Requisitos previos
+
 - Python 3.9 o superior
 - pip actualizado: `python -m pip install --upgrade pip`
 
-### 2. Instalar dependencias Python
+### Pasos
 
 ```bash
+# 1. Clonar o descargar el repositorio
+git clone https://github.com/drambaut/webscraping-temas-internacionales---ANE.git
+cd web-searcher
+
+# 2. Instalar dependencias Python
 pip install -r requirements.txt
-```
 
-### 3. Instalar el navegador Chromium de Playwright
-
-```bash
+# 3. Instalar el navegador Chromium de Playwright (solo una vez, ~150 MB)
 playwright install chromium
+
+# 4. Iniciar el servidor
+uvicorn app:app --reload --port 8000
 ```
 
-> ⚠️ Este paso descarga ~150MB. Solo se hace una vez.
+Abre el navegador en **http://localhost:8000**
 
 ---
 
-## 🚀 Uso
+## Uso
 
-### Búsqueda básica (en los 10 sitios, con traducción automática)
+### Búsqueda básica
 
-```bash
-python src/main.py --query "spectrum"
-```
+1. Escribe el tema a buscar en la barra principal (en cualquier idioma).
+2. Haz clic en **Buscar**.
+3. Espera mientras el sistema visita cada organismo uno a uno.
+4. Al terminar, descarga el archivo Excel con todos los links encontrados.
 
-### Buscar solo en sitios específicos
+### Opciones avanzadas
 
-```bash
-python src/main.py --query "spectrum management" --sites itu fcc ofcom
-```
+Haz clic en **Opciones de búsqueda** para:
 
-### Ver el navegador en acción (útil para depuración)
+| Opción | Descripción |
+|---|---|
+| **Organismos a consultar** | Selecciona uno, varios o todos |
+| **Formato de descarga** | Excel `.xlsx` (por defecto) o CSV `.csv` |
+| **Traducción automática** | Activa/desactiva la traducción al idioma de cada sitio |
 
-```bash
-python src/main.py --query "5G" --headless false
-```
+### Archivo de resultados
 
-### Sin traducción automática (usar la query tal como está)
+El Excel generado incluye dos hojas:
 
-```bash
-python src/main.py --query "gestión del espectro" --no-translate
-```
+- **Resultados** — todos los links con columnas: Organismo, Nombre, Query usada, Idioma, URL (con hipervínculo), Texto del link, Fecha/Hora.
+- **Resumen** — conteo de links por organismo con indicador verde/rojo.
 
-### Exportar en CSV en lugar de Excel
+---
 
-```bash
-python src/main.py --query "spectrum" --format csv
-```
+## Despliegue en Render
 
-### Especificar directorio de salida y máximo de links
+El repositorio incluye `render.yaml` con toda la configuración lista.
 
-```bash
-python src/main.py --query "frequency" --output-dir resultados --max-links 100
-```
+### Pasos
 
-### Ver los sitios disponibles
+1. Sube el proyecto a un repositorio **GitHub** (público o privado).
+2. Entra a [render.com](https://render.com) → **New Web Service**.
+3. Conecta el repositorio.
+4. Render detecta el `render.yaml` automáticamente.
+5. Haz clic en **Deploy**.
 
-```bash
-python src/main.py --list-sites
+### Variables de entorno (ya configuradas en `render.yaml`)
+
+| Variable | Valor |
+|---|---|
+| `PLAYWRIGHT_BROWSERS_PATH` | `/opt/render/.cache/ms-playwright` |
+| `PYTHONUNBUFFERED` | `1` |
+
+### Plan recomendado
+
+| Plan | RAM | ¿Suficiente? |
+|---|---|---|
+| Starter | 512 MB | ⚠️ Justo para Chromium |
+| **Standard** | **1 GB** | **✅ Recomendado** |
+| Pro | 2 GB | ✅ Holgado |
+
+> Chromium requiere al menos ~400 MB de RAM en ejecución. Se recomienda el plan **Standard**.
+
+---
+
+## API endpoints
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/` | Sirve la interfaz web (`index.html`) |
+| `GET` | `/api/sites` | Lista de organismos configurados |
+| `POST` | `/api/search` | Inicia una búsqueda, devuelve `job_id` |
+| `GET` | `/api/progress/{job_id}` | Stream SSE con el progreso en tiempo real |
+| `GET` | `/api/download/{job_id}` | Descarga el archivo de resultados |
+
+### Ejemplo — `POST /api/search`
+
+```json
+{
+  "query": "gestión del espectro radioeléctrico",
+  "site_ids": ["itu", "fcc", "ofcom"],
+  "no_translate": false,
+  "format": "xlsx",
+  "max_links": 50
+}
 ```
 
 ---
 
-## 📊 Salida
+## Personalizar organismos (`config/sites.json`)
 
-Se genera un archivo Excel en `output/` con:
+Si un sitio no devuelve resultados, lo más probable es que su selector CSS haya cambiado.
 
-- **Hoja "Resultados"**: todos los links encontrados con columnas:
-  - Organismo (ID), Nombre completo, Query usada, Idioma, URL (con hipervínculo), Texto del link, Fecha/Hora
-
-- **Hoja "Resumen"**: conteo de links por organismo, con indicador verde/rojo.
-
----
-
-## 🌐 Traducción automática
-
-La herramienta traduce automáticamente tu query a:
-
-| Idioma   | Código | Usado para       |
-|----------|--------|------------------|
-| Inglés   | `en`   | ITU, CEPT, ISED, FCC, Ofcom, ACMA |
-| Español  | `es`   | CRT, Subtel, y como alternativa |
-| Coreano  | `ko`   | MSIT (Corea)     |
-| Portugués| `pt`   | Anatel (Brasil)  |
-
-Usa **deep_translator** (Google Translate gratuito, sin API key).
-
----
-
-## 🔧 Personalizar selectores CSS (`config/sites.json`)
-
-Si un sitio no devuelve resultados, lo más probable es que el selector CSS
-de la barra de búsqueda haya cambiado. Para actualizarlo:
-
-1. Abre el sitio en Chrome.
-2. Haz clic derecho sobre la barra de búsqueda → "Inspeccionar".
-3. Copia el selector CSS del elemento `<input>`.
-4. Actualiza `search_box` en `config/sites.json`.
-
-Campos configurables por sitio:
+### Campos configurables
 
 ```json
 {
   "id": "fcc",
-  "name": "FCC",
+  "name": "Comisión Federal de Comunicaciones (FCC)",
   "url": "https://www.fcc.gov/",
   "language": "en",
+  "region": "Región 2",
   "search_url": "https://www.fcc.gov/search/#q={query}",
   "search_method": "url",
-  "search_box": "input[name='keys']",
-  "search_button": "button[type='submit']",
-  "results_container": ".view-content",
-  "result_links": "a[href]",
+  "result_links": ".searchresult a[href]",
   "result_link_filter": "fcc.gov",
-  "wait_for": ".view-content"
+  "wait_for": ".searchresult"
 }
 ```
 
-| Campo               | Descripción |
-|---------------------|-------------|
-| `search_url`        | URL de búsqueda directa. `{query}` se reemplaza con la búsqueda codificada. |
-| `search_method`     | `"url"` (preferido) o `"form"` (formulario interactivo). |
-| `search_box`        | Selector CSS de la caja de búsqueda (separar alternativas con `,`). |
-| `search_button`     | Selector CSS del botón de búsqueda. |
-| `result_link_filter`| Solo guardar links que contengan este texto (p.ej. el dominio). |
-| `wait_for`          | Selector que indica que los resultados ya cargaron. |
+| Campo | Descripción |
+|---|---|
+| `search_url` | URL con `{query}` como marcador. Método preferido. |
+| `search_method` | `"url"` (directo) o `"form"` (interacción con formulario) |
+| `result_links` | Selector CSS de los links de resultados |
+| `result_link_filter` | Filtra links que contengan este texto (ej: el dominio) |
+| `wait_for` | Selector que indica que la página ya cargó los resultados |
+
+### Cómo actualizar un selector
+
+1. Abre el sitio en Chrome.
+2. Clic derecho sobre un resultado de búsqueda → **Inspeccionar**.
+3. Copia el selector CSS del elemento `<a>`.
+4. Actualiza `result_links` en `config/sites.json`.
 
 ---
 
-## 🛠️ Solución de problemas
+## Solución de problemas
 
-### "No se encontraron resultados"
-
-1. Ejecuta con `--headless false` para ver qué pasa visualmente.
-2. Revisa el log en `logs/` para ver mensajes de error específicos.
-3. El selector CSS pudo haber cambiado → actualiza `sites.json`.
-4. El sitio puede bloquear bots → aumenta los tiempos de espera en `browser.py`.
-
-### "Error de timeout"
-
-- Aumenta el timeout en `browser.py` → función `safe_goto()`, parámetro `timeout`.
+### "No se encontraron resultados en ningún sitio"
 - Verifica tu conexión a internet.
+- El sitio pudo haber cambiado sus selectores CSS → actualiza `sites.json`.
+- Algunos sitios bloquean bots agresivamente; los tiempos de espera en `browser.py` pueden necesitar ajuste.
 
-### El sitio en coreano (MSIT) no funciona
+### Error de memoria en Render
+- Sube al plan **Standard** (1 GB RAM).
 
-- MSIT puede requerir la URL de búsqueda actualizada.
-- Entra manualmente a `https://www.msit.go.kr/` y busca algo.
-- Copia la URL resultante y úsala como template en `search_url` de `sites.json`.
+### `playwright install-deps` falla en el build
+- Agrega un script `build.sh` que ejecute ambos comandos por separado con `set -e`.
 
-### "playwright install chromium" falla
-
-- En Linux puede requerir dependencias del sistema:
-  ```bash
-  playwright install-deps chromium
-  ```
+### El log muestra "Error de timeout"
+- Aumenta el `timeout` en `browser.py` → función `safe_goto()`.
 
 ---
 
-## 📅 Uso mensual recomendado
+## Dependencias principales
 
-```bash
-# Mes a mes, solo ejecuta:
-python src/main.py --query "TU TEMA DEL MES"
+| Librería | Versión mínima | Uso |
+|---|---|---|
+| `fastapi` | 0.111.0 | Backend web y API REST |
+| `uvicorn` | 0.30.0 | Servidor ASGI para producción |
+| `playwright` | 1.44.0 | Automatización de Chromium |
+| `deep-translator` | 1.11.4 | Traducción gratuita sin API key |
+| `openpyxl` | 3.1.2 | Generación de archivos Excel |
 
-# Los resultados quedan en output/ con fecha y hora en el nombre
+---
+
+## Uso mensual recomendado (flujo de trabajo ANE)
+
+```
+Cada mes:
+  1. Abrir la herramienta en el navegador
+  2. Escribir el tema del mes (ej: "asignación de espectro 5G")
+  3. Seleccionar los organismos de interés (o dejar todos)
+  4. Hacer clic en Buscar y esperar (~5-15 min según la cantidad de sitios)
+  5. Descargar el Excel con los resultados
+  6. Revisar los links en la hoja "Resultados"
 ```
 
 ---
 
-## 📄 Licencia
+## Licencia
 
-Herramienta de uso interno. Gratuita y de código abierto.
+Herramienta de uso interno — Agencia Nacional del Espectro, Colombia.  
+Código abierto, sin restricciones de uso.
